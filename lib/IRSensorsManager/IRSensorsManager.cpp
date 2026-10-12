@@ -31,19 +31,36 @@ void IRSensorsManager::calibrate()
 
 float IRSensorsManager::calc_error()
 {
-  int sum, weighted_sum = 0;
-  uint16_t reading[number_of_sensors]{};
-  int16_t weighted_reading[number_of_sensors]{};
-  read_all(reading);
-  read_all_with_weight(weighted_reading);
+  int sum = 0;
+  long weighted_sum = 0;
+  int active_count = 0;
+
+  uint16_t raw_reading[number_of_sensors]{};
+  read_all(raw_reading);
 
   for (size_t i = 0; i < number_of_sensors; i++)
   {
-    weighted_sum += weighted_reading[i];
-    sum += reading[i];
+    long filtered_value = map(raw_reading[i], darker_values[i], brighter_values[i], 0, 1000);
+    filtered_value = constrain(filtered_value, 0, 1000);
+
+    if (filtered_value > LINE_THRESHOLD)
+      active_count++;
+
+    int8_t weight = sensors[i]->get_weight();
+    weighted_sum += filtered_value*weight;
+    sum += filtered_value;
   }
 
-  return sum == 0 ? 0.0f : (float)weighted_sum / sum;
+  // Perdeu a linha: Tracejado ou saída da pista
+  if (active_count == 0 || sum == 0)
+  {
+    if (last_error > 0.5f) return 5.0f;
+    if (last_error < -0.5f) return -5.0f;
+    return 0.0f;
+  }
+
+  last_error = (float)weighted_sum / sum;
+  return last_error;
 }
 
 void IRSensorsManager::read_all(uint16_t reading[number_of_sensors])

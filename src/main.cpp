@@ -7,7 +7,8 @@
 #include <PID.h>
 
 // Estrutura para empacotar os dados
-struct TelemetryData {
+struct TelemetryData
+{
   float error;
   float correction;
   int16_t left_speed;
@@ -128,6 +129,22 @@ void vRaceTask(void *params)
 
         // Calcula o erro e a correção
         float error = ir_sensors_manager.calc_error();
+
+        if (error == 5.0f)
+        {
+          left_engine.change_speed(255);
+          right_engine.change_speed(-200); // Puxa pra trás
+          vTaskDelay(pdMS_TO_TICKS(10));
+          continue; // Pula o cálculo do PID neste loop
+        }
+        else if (error == -5.0f)
+        {
+          left_engine.change_speed(-200); // Puxa pra trás
+          right_engine.change_speed(255);
+          vTaskDelay(pdMS_TO_TICKS(10));
+          continue; // Pula o cálculo do PID neste loop
+        }
+
         float correction = pid.compute(error, delta);
 
         int16_t left_speed = base_speed + (int16_t)correction;
@@ -258,18 +275,22 @@ void vUpdateLedRGBTask(void *params)
   vTaskDelete(NULL);
 }
 
-void vTelemetryTask(void *params) {
+void vTelemetryTask(void *params)
+{
   TelemetryData data;
   uint8_t print_counter = 0;
 
-  while (true) {
+  while (true)
+  {
     // Fica bloqueada aguardando dados chegarem na fila
-    if (xQueueReceive(xTelemetryQueue, &data, portMAX_DELAY) == pdTRUE) {
-      
+    if (xQueueReceive(xTelemetryQueue, &data, portMAX_DELAY) == pdTRUE)
+    {
+
       // Imprime 1 a cada 10 ciclos (50Hz) para não saturar a comunicação serial
       // Os 9 ciclos restantes são lidos da fila e descartados
-      if (++print_counter >= 10) { 
-        Serial.printf("Err: %.2f | Corr: %.2f | MotE: %d | MotD: %d\n", 
+      if (++print_counter >= 10)
+      {
+        Serial.printf("Err: %.2f | Corr: %.2f | MotE: %d | MotD: %d\n",
                       data.error, data.correction, data.left_speed, data.right_speed);
         print_counter = 0;
       }

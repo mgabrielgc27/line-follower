@@ -9,6 +9,8 @@ private:
   IRSensor *sensors[number_of_sensors];
   uint16_t darker_values[number_of_sensors]{1023, 1023, 1023, 1023, 1023};
   uint16_t brighter_values[number_of_sensors]{0, 0, 0, 0, 0};
+  float last_error{0.0f};
+  static const uint16_t LINE_THRESHOLD{500};
 
 public:
   IRSensorsManager(const uint8_t pins[number_of_sensors], const int8_t weights[number_of_sensors]);
