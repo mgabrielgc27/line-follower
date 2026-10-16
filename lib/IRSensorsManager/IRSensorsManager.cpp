@@ -3,10 +3,9 @@
 IRSensorsManager::IRSensorsManager(const uint8_t pins[number_of_sensors], const int8_t weights[number_of_sensors])
 {
   for (size_t i = 0; i < number_of_sensors; i++)
-  {    
+  {
     sensors[i] = new IRSensor{pins[i], weights[i], false};
   }
-  
 }
 
 IRSensorsManager::~IRSensorsManager()
@@ -43,20 +42,27 @@ float IRSensorsManager::calc_error()
     long filtered_value = map(raw_reading[i], darker_values[i], brighter_values[i], 0, 1000);
     filtered_value = constrain(filtered_value, 0, 1000);
 
-    if (filtered_value > LINE_THRESHOLD)
+    if ((filtered_value > LINE_THRESHOLD) && i != 2)
       active_count++;
 
     int8_t weight = sensors[i]->get_weight();
-    weighted_sum += filtered_value*weight;
+    weighted_sum += filtered_value * weight;
     sum += filtered_value;
   }
 
   // Perdeu a linha: Tracejado ou saída da pista
   if (active_count == 0 || sum == 0)
   {
-    if (last_error > 0.5f) return 5.0f;
-    if (last_error < -0.5f) return -5.0f;
+    // if (last_error > 0.5f) return 5.0f;
+    // if (last_error < -0.5f) return -5.0f;
     return 0.0f;
+  }
+  if (active_count == 2)
+  {
+    if (weighted_sum < 0)
+      return -5.0;
+    if (weighted_sum > 0)
+      return 5.0;
   }
 
   last_error = (float)weighted_sum / sum;
