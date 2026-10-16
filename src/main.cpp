@@ -63,9 +63,9 @@ Engine right_engine{RIGHT_ENGINE_PIN_IN1, RIGHT_ENGINE_PIN_IN2, RIGHT_ENGINE_PIN
 
 PID pid{KP, KI, KD};
 
-Button btn_toggle_race{PIN_BTN_TOGGLE_RACE, INPUT_PULLDOWN, isr_btn_toggle_race, RISING, BUTTONS_DEBOUNCE_MS};
-Button btn_toggle_ir_sensors_calibration{PIN_BTN_TOGGLE_IR_SENSORS_CALIBRATION, INPUT_PULLDOWN, isr_btn_toggle_ir_sensors_calibration, RISING, BUTTONS_DEBOUNCE_MS};
-Button btn_toggle_engines_test{PIN_BTN_TOGGLE_ENGINES_TEST, INPUT_PULLDOWN, isr_btn_toggle_engines_test, RISING, BUTTONS_DEBOUNCE_MS};
+Button btn_toggle_race{PIN_BTN_TOGGLE_RACE, INPUT_PULLUP, isr_btn_toggle_race, FALLING, BUTTONS_DEBOUNCE_MS};
+Button btn_toggle_ir_sensors_calibration{PIN_BTN_TOGGLE_IR_SENSORS_CALIBRATION, INPUT_PULLUP, isr_btn_toggle_ir_sensors_calibration, FALLING, BUTTONS_DEBOUNCE_MS};
+Button btn_toggle_engines_test{PIN_BTN_TOGGLE_ENGINES_TEST, INPUT_PULLUP, isr_btn_toggle_engines_test, FALLING, BUTTONS_DEBOUNCE_MS};
 
 void setup()
 {
@@ -81,6 +81,7 @@ void setup()
   xTaskCreatePinnedToCore(vEnginesTestTask, "ENGINES_TEST", 2048, NULL, 1, &xEnginesTestTaskHandle, 1);
   xTaskCreatePinnedToCore(vUpdateLedRGBTask, "UPDATE_LEDRGB", 2048, NULL, 1, &xUpdateLedRGBTaskHandle, 1);
   xTaskCreatePinnedToCore(vTelemetryTask, "TELEMETRY", 2048, NULL, 1, NULL, 1);
+
 }
 
 void loop() { vTaskDelete(NULL); }
@@ -220,6 +221,7 @@ void vEnginesTestTask(void *params)
       TickType_t duration_ticks = pdMS_TO_TICKS(ENGINES_TEST_DURATION_MS);
       bool stop_early = false;
 
+      
       while ((xTaskGetTickCount() - start_ticks) < duration_ticks)
       {
         // Se clicar o botão novamente, cancela o teste antes dos 10s
